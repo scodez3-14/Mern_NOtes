@@ -11,6 +11,8 @@ function Home() {
   const [newNote, setNewNote] = useState({ title: "", content: "", category: "personal" });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editNote, setEditNote] = useState({ title: "", content: "", category: "personal" });
   const { user, logout } = useAuth();
 
   // Load notes from API
@@ -86,9 +88,35 @@ function Home() {
       if (selectedNote && selectedNote._id === noteId) {
         setSelectedNote(updated);
       }
+      setIsEditing(false);
+      setEditNote({ title: "", content: "", category: "personal" });
     } catch (error) {
       console.error("Error updating note:", error);
       setError("Failed to update note. Please try again.");
+    }
+  };
+
+  const handleStartEdit = (note) => {
+    setIsEditing(true);
+    setEditNote({
+      title: note.title,
+      content: note.content,
+      category: note.category
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditNote({ title: "", content: "", category: "personal" });
+  };
+
+  const handleSaveEdit = () => {
+    if (editNote.title.trim() && editNote.content.trim()) {
+      handleUpdateNote(selectedNote._id, {
+        title: editNote.title.trim(),
+        content: editNote.content.trim(),
+        category: editNote.category
+      });
     }
   };
 
@@ -272,38 +300,88 @@ function Home() {
                 </div>
               ) : selectedNote ? (
                 <div className="note-viewer">
-                  <div className="viewer-header">
-                    <div className="note-info">
-                      <h2>{selectedNote.title}</h2>
-                      <div className="note-metadata">
-                        <span 
-                          className="category-badge"
-                          style={{ backgroundColor: getCategoryColor(selectedNote.category) }}
+                  {isEditing ? (
+                    <div className="note-editor">
+                      <div className="editor-header">
+                        <h2>Edit Note</h2>
+                        <div className="editor-actions">
+                          <button
+                            className="cancel-btn"
+                            onClick={handleCancelEdit}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            className="save-btn"
+                            onClick={handleSaveEdit}
+                            disabled={!editNote.title.trim() || !editNote.content.trim()}
+                          >
+                            Save Changes
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="editor-form">
+                        <input
+                          type="text"
+                          placeholder="Note title..."
+                          value={editNote.title}
+                          onChange={(e) => setEditNote(prev => ({ ...prev, title: e.target.value }))}
+                          className="title-input"
+                        />
+                        
+                        <select
+                          value={editNote.category}
+                          onChange={(e) => setEditNote(prev => ({ ...prev, category: e.target.value }))}
+                          className="category-select"
                         >
-                          {selectedNote.category}
-                        </span>
-                        <span className="date-info">
-                          Created: {formatDate(selectedNote.createdAt)}
-                        </span>
-                        <span className="date-info">
-                          Updated: {formatDate(selectedNote.updatedAt)}
-                        </span>
+                          <option value="personal">Personal</option>
+                          <option value="work">Work</option>
+                          <option value="creative">Creative</option>
+                          <option value="study">Study</option>
+                        </select>
+                        
+                        <textarea
+                          placeholder="Write your note here..."
+                          value={editNote.content}
+                          onChange={(e) => setEditNote(prev => ({ ...prev, content: e.target.value }))}
+                          className="content-textarea"
+                        />
                       </div>
                     </div>
-                    <button
-                      className="edit-btn"
-                      onClick={() => {
-                        // TODO: Implement edit functionality
-                        alert("Edit functionality coming soon!");
-                      }}
-                    >
-                      ✏️ Edit
-                    </button>
-                  </div>
-                  
-                  <div className="note-content">
-                    <p>{selectedNote.content}</p>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="viewer-header">
+                        <div className="note-info">
+                          <h2>{selectedNote.title}</h2>
+                          <div className="note-metadata">
+                            <span 
+                              className="category-badge"
+                              style={{ backgroundColor: getCategoryColor(selectedNote.category) }}
+                            >
+                              {selectedNote.category}
+                            </span>
+                            <span className="date-info">
+                              Created: {formatDate(selectedNote.createdAt)}
+                            </span>
+                            <span className="date-info">
+                              Updated: {formatDate(selectedNote.updatedAt)}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          className="edit-btn"
+                          onClick={() => handleStartEdit(selectedNote)}
+                        >
+                          ✏️ Edit
+                        </button>
+                      </div>
+                      
+                      <div className="note-content">
+                        <p>{selectedNote.content}</p>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="welcome-screen">
