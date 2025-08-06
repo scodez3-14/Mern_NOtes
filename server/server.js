@@ -78,6 +78,10 @@ app.use((err, req, res, next) => {
   });
 });
 
+app.get('/', (req, res) => {
+  res.send('🚀 Welcome to KeepNotes API Backend');
+});
+
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({
